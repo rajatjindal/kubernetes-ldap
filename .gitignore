@@ -24,6 +24,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
+*.sh
+*.idea
 notes.txt
 Godeps/Readme
 Godeps/_workspace
