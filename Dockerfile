@@ -6,5 +6,4 @@ RUN make
 
 WORKDIR /opt/
 RUN cp /go/src/github.com/apprenda-kismatic/kubernetes-ldap/bin/kubernetes-ldap .
-RUN rm -rf /go
 ENTRYPOINT ["./kubernetes-ldap"]
