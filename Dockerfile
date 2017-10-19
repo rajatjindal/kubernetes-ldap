@@ -1,4 +1,4 @@
-FROM golang:1.8.0 as builder
+FROM golang:1.8.0
 WORKDIR /go/src/github.com/apprenda-kismatic/kubernetes-ldap/
 
 COPY . .
