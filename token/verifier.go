@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 
 	jose "gopkg.in/square/go-jose.v1"
+	"time"
 )
 
 // Verifier verifies the serialized representation of a token
@@ -58,5 +59,18 @@ func (ev *ecdsaVerifier) Verify(s string) (token *AuthToken, err error) {
 		token = nil
 		return
 	}
+
+	if TokenExpired(token) {
+		return nil, fmt.Errorf("token has expired")
+	}
 	return
+}
+
+func TokenExpired (token *AuthToken) bool {
+	nowMillis := time.Now().UnixNano() / int64(time.Millisecond)
+
+	if token.Expiration < nowMillis {
+		return true
+	}
+	return false
 }

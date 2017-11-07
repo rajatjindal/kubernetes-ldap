@@ -8,6 +8,7 @@ import (
 	"github.com/proofpoint/kubernetes-ldap/ldap"
 	"github.com/proofpoint/kubernetes-ldap/token"
 	"strings"
+	"time"
 )
 
 // LDAPTokenIssuer issues cryptographically secure tokens after authenticating the
@@ -16,6 +17,7 @@ type LDAPTokenIssuer struct {
 	LDAPServer        string
 	LDAPAuthenticator ldap.Authenticator
 	TokenSigner       token.Signer
+	TTL               time.Duration
 }
 
 func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
@@ -78,11 +80,19 @@ func (lti *LDAPTokenIssuer) getGroupsFromMembersOf(membersOf []string) []string 
 
 func (lti *LDAPTokenIssuer) createToken(ldapEntry *goldap.Entry) *token.AuthToken {
 	return &token.AuthToken{
-		Username: ldapEntry.GetAttributeValue("mail"),
+		Username: ldapEntry.DN,
 		Groups:   lti.getGroupsFromMembersOf(ldapEntry.GetAttributeValues("memberOf")),
 		Assertions: map[string]string{
 			"ldapServer": lti.LDAPServer,
 			"userDN":     ldapEntry.DN,
 		},
+		Expiration: lti.getExpirationTime(),
 	}
+}
+
+func (lti *LDAPTokenIssuer) getExpirationTime() int64 {
+	nowMillis := time.Now().UnixNano() / int64(time.Millisecond)
+	ttlMillis := int64(time.Duration(lti.TTL) / time.Millisecond)
+
+	return nowMillis + ttlMillis
 }
