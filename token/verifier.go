@@ -66,7 +66,9 @@ func (ev *ecdsaVerifier) Verify(s string) (token *AuthToken, err error) {
 	return
 }
 
-func TokenExpired (token *AuthToken) bool {
+// Given a token verifies if it has already expired or not
+// return true if token has expired, false otherwise.
+func TokenExpired(token *AuthToken) bool {
 	nowMillis := time.Now().UnixNano() / int64(time.Millisecond)
 
 	if token.Expiration < nowMillis {
