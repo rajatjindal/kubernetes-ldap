@@ -21,7 +21,7 @@ var genKeypairCmd = &cobra.Command{
 			glog.Errorf("Error generating key pair: %v", err)
 			os.Exit(1)
 		}
-		fmt.Printf("Generated keypair in %sq\n", keypairDir)
+		fmt.Printf("Generated keypair in %s\n", keypairDir)
 	},
 }
 
