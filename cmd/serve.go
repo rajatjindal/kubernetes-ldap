@@ -91,6 +91,8 @@ func init() {
 		"",
 		"config file (default is $HOME/.kubernetes-ldap.yaml)")
 
+	RootCmd.PersistentFlags().StringVar(&keypairDir, "keypair-dir", "keypair", "directory that contains keypair for signing/verifying tokens. Defaults to 'keypair'")
+
 	RootCmd.Flags().StringVar(&ldapHost, "ldap-host", "", "(Required Host or IP of the LDAP server )")
 	RootCmd.Flags().UintVar(&ldapPort, "ldap-port", 389, "LDAP server port")
 

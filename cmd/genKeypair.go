@@ -27,5 +27,4 @@ var genKeypairCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(genKeypairCmd)
-	genKeypairCmd.PersistentFlags().StringVar(&keypairDir, "keypair-dir", "keypair", "directory that contains keypair for signing/verifying tokens. Defaults to 'keypair'")
 }
