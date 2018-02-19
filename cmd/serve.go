@@ -22,13 +22,13 @@ import (
 	"os"
 
 	"github.com/golang/glog"
+	"github.com/mitchellh/go-homedir"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/proofpoint/kubernetes-ldap/auth"
 	"github.com/proofpoint/kubernetes-ldap/ldap"
 	"github.com/proofpoint/kubernetes-ldap/token"
-	"github.com/spf13/cobra"
-
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cast"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"time"
 )
@@ -69,8 +69,15 @@ var RootCmd = &cobra.Command{
 	/authenticate - to verify the token`,
 	Run: func(cmd *cobra.Command, args []string) {
 		validate()
+		registerMetrics()
 		serve()
 	},
+}
+
+func registerMetrics() {
+	auth.RegisterIssueTokenMetrics()
+	auth.RegisterVerifyTokenMetrics()
+	ldap.RegisterLDAPClientMetrics()
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -237,6 +244,8 @@ func serve() error {
 
 	// Endpoint for token issuance after LDAP auth
 	http.Handle("/ldapAuth", ldapTokenIssuer)
+	//for prometheus metrics
+	http.Handle("/metrics", promhttp.Handler())
 
 	glog.Infof("Serving on %s", fmt.Sprintf(":%d", serverPort))
 
