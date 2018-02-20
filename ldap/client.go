@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/go-ldap/ldap"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Authenticator authenticates a user against an LDAP directory
@@ -26,11 +27,61 @@ type Client struct {
 	TLSConfig          *tls.Config
 }
 
+var (
+	ldapConnectionError = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "kubernetes_ldap_ldap_connection_error",
+			Help: "Total number of LDAP connection errors.",
+		},
+	)
+	ldapBindingError = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "kubernetes_ldap_ldap_binding_error",
+			Help: "Total number of LDAP binding errors.",
+		},
+	)
+	userSearchFailed = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "kubernetes_ldap_user_search_failed",
+			Help: "Total number of LDAP user search failures.",
+		},
+	)
+	noUserFound = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "kubernetes_ldap_no_user_found",
+			Help: "Total number of times user was not found in LDAP.",
+		},
+	)
+	multipleUsersFound = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "kubernetes_ldap_multiple_user_found",
+			Help: "Total number of times multiple user(s) were found in LDAP.",
+		},
+	)
+	invalidUserCredentials = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "kubernetes_ldap_invalid_credentials_error",
+			Help: "Total number of times invalid user credentials were used.",
+		},
+	)
+)
+
+//RegisterLDAPClientMetrics registers the metrics for the token generation
+func RegisterLDAPClientMetrics() {
+	prometheus.MustRegister(ldapConnectionError)
+	prometheus.MustRegister(ldapBindingError)
+	prometheus.MustRegister(userSearchFailed)
+	prometheus.MustRegister(noUserFound)
+	prometheus.MustRegister(multipleUsersFound)
+	prometheus.MustRegister(invalidUserCredentials)
+}
+
 // Authenticate a user against the LDAP directory. Returns an LDAP entry if password
 // is valid, otherwise returns an error.
 func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 	conn, err := c.dial()
 	if err != nil {
+		ldapConnectionError.Inc()
 		return nil, fmt.Errorf("Error opening LDAP connection: %v", err)
 	}
 	defer conn.Close()
@@ -43,6 +94,7 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 	}
 
 	if err != nil {
+		ldapBindingError.Inc()
 		return nil, fmt.Errorf("Error binding user to LDAP server: %v", err)
 	}
 
@@ -51,13 +103,16 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 	// Do a search to ensure the user exists within the BaseDN scope
 	res, err := conn.Search(req)
 	if err != nil {
+		userSearchFailed.Inc()
 		return nil, fmt.Errorf("Error searching for user %s: %v", username, err)
 	}
 
 	switch {
 	case len(res.Entries) == 0:
+		noUserFound.Inc()
 		return nil, fmt.Errorf("No result for the search filter '%s'", req.Filter)
 	case len(res.Entries) > 1:
+		multipleUsersFound.Inc()
 		return nil, fmt.Errorf("Multiple entries found for the search filter '%s': %+v", req.Filter, res.Entries)
 	}
 
@@ -67,6 +122,7 @@ func (c *Client) Authenticate(username, password string) (*ldap.Entry, error) {
 	if c.SearchUserDN != "" && c.SearchUserPassword != "" {
 		err = conn.Bind(res.Entries[0].DN, password)
 		if err != nil {
+			invalidUserCredentials.Inc()
 			return nil, fmt.Errorf("Error binding user %s, invalid credentials: %v", username, err)
 		}
 	}

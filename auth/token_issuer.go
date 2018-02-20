@@ -5,6 +5,7 @@ import (
 
 	goldap "github.com/go-ldap/ldap"
 	"github.com/golang/glog"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/proofpoint/kubernetes-ldap/ldap"
 	"github.com/proofpoint/kubernetes-ldap/token"
 	"strings"
@@ -21,9 +22,53 @@ type LDAPTokenIssuer struct {
 	UsernameAttribute string
 }
 
+var (
+	newTokenRequests = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "kubernetes_ldap_new_token_requests",
+			Help: "Total number of requests to get new token.",
+		},
+	)
+	noauthTokenRequests = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "kubernetes_ldap_noauth_token_requests",
+			Help: "Total number of requests to get new token without username or password.",
+		},
+	)
+	unauthTokenRequests = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "kubernetes_ldap_failed_ldap_auth",
+			Help: "Total number of requests to get new token where ldap auth failed.",
+		},
+	)
+	errorSigningToken = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "kubernetes_ldap_error_signing_tokens",
+			Help: "Total number of requests where signing new token failed.",
+		},
+	)
+	successfulTokens = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "kubernetes_ldap_successful_tokens_generated",
+			Help: "Total number of requests where tokens were successfully issued.",
+		},
+	)
+)
+
+//RegisterIssueTokenMetrics registers the metrics for the token generation
+func RegisterIssueTokenMetrics() {
+	prometheus.MustRegister(newTokenRequests)
+	prometheus.MustRegister(noauthTokenRequests)
+	prometheus.MustRegister(unauthTokenRequests)
+	prometheus.MustRegister(errorSigningToken)
+	prometheus.MustRegister(successfulTokens)
+}
+
 func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	newTokenRequests.Inc()
 	user, password, ok := req.BasicAuth()
 	if !ok {
+		noauthTokenRequests.Inc()
 		resp.Header().Add("WWW-Authenticate", `Basic realm="kubernetes ldap"`)
 		resp.WriteHeader(http.StatusUnauthorized)
 		return
@@ -32,6 +77,7 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	// Authenticate the user via LDAP
 	ldapEntry, err := lti.LDAPAuthenticator.Authenticate(user, password)
 	if err != nil {
+		unauthTokenRequests.Inc()
 		glog.Errorf("Error authenticating user: %v", err)
 		resp.WriteHeader(http.StatusUnauthorized)
 		return
@@ -43,11 +89,13 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	// Sign token and return
 	signedToken, err := lti.TokenSigner.Sign(token)
 	if err != nil {
+		errorSigningToken.Inc()
 		glog.Errorf("Error signing token: %v", err)
 		resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	successfulTokens.Inc()
 	resp.Header().Add("Content-Type", "text/plain")
 	resp.Write([]byte(signedToken))
 }
