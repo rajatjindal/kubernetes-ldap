@@ -247,6 +247,9 @@ func serve() error {
 	//for prometheus metrics
 	http.Handle("/metrics", promhttp.Handler())
 
+	//health
+	http.Handle("/health", &healthHandler{})
+
 	glog.Infof("Serving on %s", fmt.Sprintf(":%d", serverPort))
 
 	server.TLSConfig = &tls.Config{
@@ -256,4 +259,11 @@ func serve() error {
 
 	glog.Fatal(server.ListenAndServeTLS(serverTlsCertFile, serverTlsPrivateKeyFile))
 	return nil
+}
+
+type healthHandler struct{}
+
+func (t *healthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "OK")
 }
