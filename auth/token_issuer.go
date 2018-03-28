@@ -3,6 +3,7 @@ package auth
 import (
 	"net/http"
 
+	"encoding/json"
 	goldap "github.com/go-ldap/ldap"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
@@ -96,6 +97,24 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	}
 
 	successfulTokens.Inc()
+	if req.Header.Get("Accept") == "application/json" {
+		data := map[string]interface{}{
+			"token":               signedToken,
+			"expirationTimestamp": token.Expiration,
+		}
+
+		jsondata, err := json.Marshal(data)
+		if err != nil {
+			glog.Errorf("Error marshalling json %s", err.Error())
+			resp.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		resp.Header().Add("Content-Type", "application/json")
+		resp.Write(jsondata)
+		return
+	}
+
 	resp.Header().Add("Content-Type", "text/plain")
 	resp.Write([]byte(signedToken))
 }
