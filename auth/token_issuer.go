@@ -106,6 +106,8 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 		jsondata, err := json.Marshal(data)
 		if err != nil {
 			glog.Errorf("Error marshalling json %s", err.Error())
+			resp.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
 		resp.Header().Add("Content-Type", "application/json")
