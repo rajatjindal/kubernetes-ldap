@@ -32,17 +32,27 @@ func (d dummySigner) Sign(token *token.AuthToken) (string, error) {
 
 func TestTokenIssuer(t *testing.T) {
 	cases := []struct {
-		basicAuth    bool
-		ldapEntry    *ldap.Entry
-		expectedCode int
-		ldapErr      error
-		signerErr    error
+		basicAuth           bool
+		ldapEntry           *ldap.Entry
+		expectedCode        int
+		ldapErr             error
+		signerErr           error
+		acceptHeader        string
+		expectedContentType string
 	}{
 		{
 			// Happy path, user was authenticated against LDAP server
 			basicAuth:    true,
 			ldapEntry:    &ldap.Entry{},
 			expectedCode: http.StatusOK,
+		},
+		{
+			// Accept header was application/json
+			basicAuth:           true,
+			ldapEntry:           &ldap.Entry{},
+			expectedCode:        http.StatusOK,
+			acceptHeader:        "application/json",
+			expectedContentType: "application/json",
 		},
 		{
 			// Invalid LDAP creds provided by user
@@ -79,6 +89,10 @@ func TestTokenIssuer(t *testing.T) {
 			req.SetBasicAuth("user", "password")
 		}
 
+		if c.acceptHeader != "" {
+			req.Header.Set("Accept", c.acceptHeader)
+		}
+
 		rec := httptest.NewRecorder()
 		lti.ServeHTTP(rec, req)
 
@@ -87,6 +101,14 @@ func TestTokenIssuer(t *testing.T) {
 		}
 		if !strings.Contains(rec.Body.String(), "signedToken") && c.expectedCode == http.StatusOK {
 			t.Errorf("Case: %d. body did not contain expected token. body contents: %q", i, rec.Body.String())
+		}
+
+		if c.acceptHeader != "" && rec.Header().Get("Content-Type") != c.expectedContentType {
+			t.Errorf("Case: %d. Content-Type expected: %q, got: %q", i, c.expectedContentType, rec.Header().Get("Content-Type"))
+		}
+
+		if c.acceptHeader != "" && !strings.Contains(rec.Body.String(), "expirationTimestamp") {
+			t.Errorf("Case: %d. body did not contain expirationTimestamp. body contents: %q", i, rec.Body.String())
 		}
 	}
 }
