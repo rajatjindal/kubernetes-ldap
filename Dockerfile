@@ -1,11 +1,11 @@
-FROM golang:1.9 as builder
+FROM golang:1.12.8 as builder
 WORKDIR /go/src/github.com/proofpoint/kubernetes-ldap/
 
 COPY . .
 RUN go get ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/kubernetes-ldap .
 
-FROM alpine:3.6
+FROM alpine:3.10.2
 RUN mkdir /opt
 RUN apk add --no-cache ca-certificates
 WORKDIR /opt/
