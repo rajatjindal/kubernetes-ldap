@@ -42,7 +42,6 @@ Session.vim
 *~
 
 # Glade will recreate this, so don't need in source control
-vendor/
 *.yaml
 *.crt
 *.cert
