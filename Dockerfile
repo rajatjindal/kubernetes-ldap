@@ -3,7 +3,7 @@ WORKDIR /go/src/github.com/proofpoint/kubernetes-ldap/
 
 COPY . .
 RUN go test ./...
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/kubernetes-ldap .
+RUN CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -o bin/kubernetes-ldap .
 
 FROM alpine:3.10.2
 RUN apk add --no-cache ca-certificates
