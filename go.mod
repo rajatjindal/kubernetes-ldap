@@ -4,25 +4,27 @@ go 1.15
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
-	github.com/fsnotify/fsnotify v1.4.2 // indirect
-	github.com/go-ldap/ldap v2.5.0+incompatible
+	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/go-ldap/ldap v3.0.3+incompatible
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/magiconair/properties v1.7.3 // indirect
-	github.com/mitchellh/go-homedir v0.0.0-20161203194507-b8bc1bf76747
-	github.com/mitchellh/mapstructure v0.0.0-20171017171808-06020f85339e // indirect
-	github.com/pelletier/go-toml v1.0.1 // indirect
-	github.com/prometheus/client_golang v1.1.0
-	github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4 // indirect
-	github.com/prometheus/procfs v0.0.4 // indirect
-	github.com/spf13/afero v0.0.0-20171021110813-5660eeed305f // indirect
-	github.com/spf13/cast v1.1.0
-	github.com/spf13/cobra v0.0.1
-	github.com/spf13/jwalterweatherman v0.0.0-20170901151539-12bd96e66386 // indirect
-	github.com/spf13/pflag v1.0.0 // indirect
-	github.com/spf13/viper v1.0.0
-	gopkg.in/asn1-ber.v1 v1.0.0-20170511165959-379148ca0225 // indirect
+	github.com/magiconair/properties v1.8.4 // indirect
+	github.com/mitchellh/go-homedir v1.1.0
+	github.com/mitchellh/mapstructure v1.3.3 // indirect
+	github.com/pelletier/go-toml v1.8.1 // indirect
+	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/common v0.14.0 // indirect
+	github.com/prometheus/procfs v0.2.0 // indirect
+	github.com/spf13/afero v1.4.1 // indirect
+	github.com/spf13/cast v1.3.1
+	github.com/spf13/cobra v1.0.0
+	github.com/spf13/jwalterweatherman v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/viper v1.7.1
+	golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634 // indirect
+	google.golang.org/protobuf v1.25.0 // indirect
+	gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d // indirect
+	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/ldap.v2 v2.5.1 // indirect
-	gopkg.in/square/go-jose.v1 v1.1.0
+	gopkg.in/square/go-jose.v1 v1.1.2
 )
