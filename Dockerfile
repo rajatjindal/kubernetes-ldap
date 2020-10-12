@@ -2,8 +2,8 @@ FROM golang:1.15 as builder
 WORKDIR /go/src/github.com/proofpoint/kubernetes-ldap/
 
 COPY . .
-RUN go test ./...
-RUN CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -o bin/kubernetes-ldap .
+RUN go test -mod=vendor ./...
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor --ldflags "-s -w" -o bin/kubernetes-ldap .
 
 FROM alpine:3.12.0
 ## use https
