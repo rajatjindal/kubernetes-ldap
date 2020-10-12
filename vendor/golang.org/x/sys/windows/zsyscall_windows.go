@@ -180,9 +180,11 @@ var (
 	procRegEnumKeyExW                                        = modadvapi32.NewProc("RegEnumKeyExW")
 	procRegQueryValueExW                                     = modadvapi32.NewProc("RegQueryValueExW")
 	procGetCurrentProcessId                                  = modkernel32.NewProc("GetCurrentProcessId")
+	procProcessIdToSessionId                                 = modkernel32.NewProc("ProcessIdToSessionId")
 	procGetConsoleMode                                       = modkernel32.NewProc("GetConsoleMode")
 	procSetConsoleMode                                       = modkernel32.NewProc("SetConsoleMode")
 	procGetConsoleScreenBufferInfo                           = modkernel32.NewProc("GetConsoleScreenBufferInfo")
+	procSetConsoleCursorPosition                             = modkernel32.NewProc("SetConsoleCursorPosition")
 	procWriteConsoleW                                        = modkernel32.NewProc("WriteConsoleW")
 	procReadConsoleW                                         = modkernel32.NewProc("ReadConsoleW")
 	procCreateToolhelp32Snapshot                             = modkernel32.NewProc("CreateToolhelp32Snapshot")
@@ -212,6 +214,7 @@ var (
 	procResumeThread                                         = modkernel32.NewProc("ResumeThread")
 	procSetPriorityClass                                     = modkernel32.NewProc("SetPriorityClass")
 	procGetPriorityClass                                     = modkernel32.NewProc("GetPriorityClass")
+	procQueryInformationJobObject                            = modkernel32.NewProc("QueryInformationJobObject")
 	procSetInformationJobObject                              = modkernel32.NewProc("SetInformationJobObject")
 	procGenerateConsoleCtrlEvent                             = modkernel32.NewProc("GenerateConsoleCtrlEvent")
 	procGetProcessId                                         = modkernel32.NewProc("GetProcessId")
@@ -1941,6 +1944,18 @@ func GetCurrentProcessId() (pid uint32) {
 	return
 }
 
+func ProcessIdToSessionId(pid uint32, sessionid *uint32) (err error) {
+	r1, _, e1 := syscall.Syscall(procProcessIdToSessionId.Addr(), 2, uintptr(pid), uintptr(unsafe.Pointer(sessionid)), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
 func GetConsoleMode(console Handle, mode *uint32) (err error) {
 	r1, _, e1 := syscall.Syscall(procGetConsoleMode.Addr(), 2, uintptr(console), uintptr(unsafe.Pointer(mode)), 0)
 	if r1 == 0 {
@@ -1967,6 +1982,18 @@ func SetConsoleMode(console Handle, mode uint32) (err error) {
 
 func GetConsoleScreenBufferInfo(console Handle, info *ConsoleScreenBufferInfo) (err error) {
 	r1, _, e1 := syscall.Syscall(procGetConsoleScreenBufferInfo.Addr(), 2, uintptr(console), uintptr(unsafe.Pointer(info)), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func SetConsoleCursorPosition(console Handle, position Coord) (err error) {
+	r1, _, e1 := syscall.Syscall(procSetConsoleCursorPosition.Addr(), 2, uintptr(console), uintptr(*((*uint32)(unsafe.Pointer(&position)))), 0)
 	if r1 == 0 {
 		if e1 != 0 {
 			err = errnoErr(e1)
@@ -2332,6 +2359,18 @@ func GetPriorityClass(process Handle) (ret uint32, err error) {
 	r0, _, e1 := syscall.Syscall(procGetPriorityClass.Addr(), 1, uintptr(process), 0, 0)
 	ret = uint32(r0)
 	if ret == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func QueryInformationJobObject(job Handle, JobObjectInformationClass int32, JobObjectInformation uintptr, JobObjectInformationLength uint32, retlen *uint32) (err error) {
+	r1, _, e1 := syscall.Syscall6(procQueryInformationJobObject.Addr(), 5, uintptr(job), uintptr(JobObjectInformationClass), uintptr(JobObjectInformation), uintptr(JobObjectInformationLength), uintptr(unsafe.Pointer(retlen)), 0)
+	if r1 == 0 {
 		if e1 != 0 {
 			err = errnoErr(e1)
 		} else {
