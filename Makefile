@@ -5,12 +5,12 @@ REPO = kubernetes-ldap
 NAME = kubernetes-ldap
 INSTANCE = default
 
-.PHONY: build push shell run start stop rm release vendor
+.PHONY: build push shell run start stop rm release
 
 default: fmt vet test build
 
-build: vendor
-	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/kubernetes-ldap .
+build:
+	CGO_ENABLED=0 GOOS=linux go build -mod=vendor --ldflags "-s -w" -o bin/kubernetes-ldap .
 
 docker:
 	docker build -t $(NS)/$(REPO):$(VERSION) .
@@ -33,7 +33,4 @@ fmt:
 vet:
 	go vet ./...
 
-vendor:
-	go get -u github.com/golang/dep/cmd/dep
-	dep ensure
 

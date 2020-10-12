@@ -6,9 +6,6 @@ go:
   - 1.9
   - tip
 
-install:
-  - make vendor
-
 script:
   - make fmt
   - make vet
