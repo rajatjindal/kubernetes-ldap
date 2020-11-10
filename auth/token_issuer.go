@@ -1,26 +1,30 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 
 	"encoding/json"
+	"strings"
+	"time"
+
 	goldap "github.com/go-ldap/ldap"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/proofpoint/kubernetes-ldap/client"
 	"github.com/proofpoint/kubernetes-ldap/ldap"
 	"github.com/proofpoint/kubernetes-ldap/token"
-	"strings"
-	"time"
 )
 
 // LDAPTokenIssuer issues cryptographically secure tokens after authenticating the
 // user against a backing LDAP directory.
 type LDAPTokenIssuer struct {
-	LDAPServer        string
-	LDAPAuthenticator ldap.Authenticator
-	TokenSigner       token.Signer
-	TTL               time.Duration
-	UsernameAttribute string
+	LDAPServer            string
+	LDAPAuthenticator     ldap.Authenticator
+	TokenSigner           token.Signer
+	TTL                   time.Duration
+	UsernameAttribute     string
+	EnforceClientVersions bool
 }
 
 var (
@@ -73,6 +77,24 @@ func (lti *LDAPTokenIssuer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 		resp.Header().Add("WWW-Authenticate", `Basic realm="kubernetes ldap"`)
 		resp.WriteHeader(http.StatusUnauthorized)
 		return
+	}
+
+	if lti.EnforceClientVersions {
+		pluginVersion := req.Header.Get("x-pfpt-k8sldapctl-version")
+		kubectlVersion := req.Header.Get("x-pfpt-kubectl-version")
+
+		if pluginVersion == "" || kubectlVersion == "" {
+			resp.WriteHeader(http.StatusBadRequest)
+			resp.Write([]byte(fmt.Sprintf("\nError: you are using an old version of k8sldapctl plugin. Please upgrade to minimum of %q", client.MinimumPluginVersion)))
+			return
+		}
+
+		err := client.Validate(pluginVersion, kubectlVersion)
+		if err != nil {
+			resp.WriteHeader(http.StatusBadRequest)
+			resp.Write([]byte(fmt.Sprintf("\nError: %s", err.Error())))
+			return
+		}
 	}
 
 	// Authenticate the user via LDAP

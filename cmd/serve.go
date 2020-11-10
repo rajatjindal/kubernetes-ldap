@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"os"
 
+	"time"
+
 	"github.com/golang/glog"
 	"github.com/mitchellh/go-homedir"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -30,7 +32,6 @@ import (
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"time"
 )
 
 //different flags supported by serve command
@@ -58,6 +59,8 @@ var (
 
 	keypairDir string
 	genKeypair bool
+
+	enforceClientVersions bool
 )
 
 // RootCmd represents the serve command
@@ -119,6 +122,8 @@ func init() {
 
 	RootCmd.Flags().DurationVar(&tokenTtl, "token-ttl", 24*time.Hour, "TTL for the token")
 	RootCmd.Flags().BoolVar(&genKeypair, "gen-keypair", false, "generate new keypair while starting server")
+
+	RootCmd.Flags().BoolVar(&enforceClientVersions, "enforce-client-versions", false, "if true enforces minimum version of k8sldapctl and kubectl")
 
 	viper.BindPFlags(RootCmd.Flags())
 	flag.CommandLine.Parse([]string{})
@@ -233,10 +238,11 @@ func serve() error {
 	webhook := auth.NewTokenWebhook(tokenVerifier)
 
 	ldapTokenIssuer := &auth.LDAPTokenIssuer{
-		LDAPAuthenticator: ldapClient,
-		TokenSigner:       tokenSigner,
-		TTL:               tokenTtl,
-		UsernameAttribute: usernameAttribute,
+		LDAPAuthenticator:     ldapClient,
+		TokenSigner:           tokenSigner,
+		TTL:                   tokenTtl,
+		UsernameAttribute:     usernameAttribute,
+		EnforceClientVersions: enforceClientVersions,
 	}
 
 	// Endpoint for authenticating with token
